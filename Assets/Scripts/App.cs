@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using Carrot;
+using SimpleFileBrowser;
+using Unity.IO.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -61,6 +63,8 @@ public class App : MonoBehaviour
     }
 
     private void Done_export_exel(string[] s_paths){
-        
+        string path=s_paths[0];
+        FileBrowserHelpers.WriteTextToFile(s_paths[0],"cccd.csv");
+        this.carrot.Show_msg("Data export","Data export successful at path "+path+" !");
     }
 }

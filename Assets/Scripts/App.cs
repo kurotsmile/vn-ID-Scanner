@@ -1,6 +1,12 @@
 
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 using Carrot;
+using NUnit.Framework;
 using SimpleFileBrowser;
 using UnityEngine;
 using UnityEngine.UI;
@@ -21,14 +27,14 @@ public class App : MonoBehaviour
 
     public Color32 color_a;
     public Color32 color_b;
-    public IList list_data_cccd;
+    public List<String> list_data_cccd;
     
     void Start()
     {
         this.carrot.Load_Carrot();
         this.panel_main.SetActive(true);
         this.panel_scaner.SetActive(false);
-        this.list_data_cccd=(IList) Json.Deserialize("[]");
+        this.list_data_cccd=new List<string>();
         CodeReader.OnCodeFinished += getDataFromReader;
         this.Update_list_data();
     }
@@ -69,21 +75,22 @@ public class App : MonoBehaviour
         this.file.Save_file(Done_export_exel);
     }
 
-    private void Done_export_exel(string[] s_paths){
-        string path=s_paths[0];
+    private void Done_export_exel(string[] s_paths)
+    {
+        string path = s_paths[0];
         string s_data="";
-        foreach (string row in this.list_data_cccd)
-        {
-           string formattedRow = row.Replace("|", ",");
-            s_data+=formattedRow+"\n";
+        s_data="số CCCD,Số CMND,tên,ngày sinh,giới tính,nơi cư trú,ngày cấp\n";
+        for(int i=0;i<this.list_data_cccd.Count;i++){
+            string utf8String =list_data_cccd[i].ToString();
+            s_data += utf8String.Replace("|",",") + "\n";
         }
-        FileBrowserHelpers.WriteTextToFile(s_paths[0],s_data);
-        this.carrot.Show_msg("Data export","Data export successful at path "+path+" !");
+        FileBrowserHelpers.WriteTextToFile(path,s_data);
+        this.carrot.Show_msg("Data export", "Data export successful at path " + path + " !");
     }
 
     [ContextMenu("Test Add Data")]
     public void Test_add_data(){
-        this.Add_data(""+Random.Range(1,9)+""+Random.Range(1,9)+""+Random.Range(1,9)+"|000|Tran Thien Thanh");
+        this.Add_data("aaaa|000|Trần Thiện Thanh");
         this.Update_list_data();
     }
 

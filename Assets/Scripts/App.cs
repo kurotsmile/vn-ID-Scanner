@@ -1,12 +1,7 @@
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using Carrot;
-using NUnit.Framework;
 using SimpleFileBrowser;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,7 +14,6 @@ public class App : MonoBehaviour
     public Carrot_File file;
 
     [Header("App Obj")]
-    
     public GameObject panel_main;
     public GameObject panel_scaner;
     public GameObject item_list_prefab;
@@ -27,6 +21,7 @@ public class App : MonoBehaviour
 
     public Color32 color_a;
     public Color32 color_b;
+    public GameObject obj_delete_all_btn;
     public List<String> list_data_cccd;
     
     void Start()
@@ -37,11 +32,6 @@ public class App : MonoBehaviour
         this.list_data_cccd=new List<string>();
         CodeReader.OnCodeFinished += getDataFromReader;
         this.Update_list_data();
-    }
-
-    void Update()
-    {
-
     }
 
     public void Btn_show_qr_scaner(){
@@ -81,8 +71,15 @@ public class App : MonoBehaviour
         string s_data="";
         s_data="số CCCD,Số CMND,tên,ngày sinh,giới tính,nơi cư trú,ngày cấp\n";
         for(int i=0;i<this.list_data_cccd.Count;i++){
-            string utf8String =list_data_cccd[i].ToString();
-            s_data += utf8String.Replace("|",",") + "\n";
+            string[] arr_s=this.list_data_cccd[i].ToString().Split("|");
+            s_data += arr_s[0]+",";
+            s_data += arr_s[1]+",";
+            s_data += arr_s[2]+",";
+            s_data += arr_s[3]+",";
+            s_data += arr_s[4]+",";
+            s_data += arr_s[5]+",";
+            s_data += arr_s[6];
+            s_data+="\n";
         }
         FileBrowserHelpers.WriteTextToFile(path,s_data);
         this.carrot.Show_msg("Data export", "Data export successful at path " + path + " !");
@@ -90,7 +87,7 @@ public class App : MonoBehaviour
 
     [ContextMenu("Test Add Data")]
     public void Test_add_data(){
-        this.Add_data("aaaa|000|Trần Thiện Thanh");
+        this.Add_data("11111223|0001111|Trần Thiện Thanh|28091993|Nam|Duong son,huong toan,hue|3082024");
         this.Update_list_data();
     }
 
@@ -107,10 +104,13 @@ public class App : MonoBehaviour
             item_none.set_title("Empty list");
             item_none.set_tip("Start scanning the qr cccd code to add data");
             item_none.set_act(this.Btn_show_qr_scaner);
+            this.obj_delete_all_btn.SetActive(false);
         }else{
+            this.obj_delete_all_btn.SetActive(true);
             for(int i=0;i<this.list_data_cccd.Count;i++){
                 var index_cccd=i;
                 string[] arr_s=this.list_data_cccd[i].ToString().Split("|");
+                var arr_data=arr_s;
                 Carrot_Box_Item item_m=this.Add_item_m();
                 item_m.set_title(arr_s[0]);
                 item_m.set_tip(arr_s[2]);
@@ -121,6 +121,12 @@ public class App : MonoBehaviour
                 else
                     item_m.GetComponent<Image>().color=this.color_b;
 
+                Carrot_Box_Btn_Item btn_view=item_m.create_item();
+                btn_view.set_icon(this.carrot.icon_carrot_visible_off);
+                btn_view.set_icon_color(Color.white);
+                btn_view.set_color(this.carrot.color_highlight);
+                btn_view.set_act(()=>{this.Show_info_data(arr_data);});
+
                 Carrot_Box_Btn_Item btn_del=item_m.create_item();
                 btn_del.set_icon(this.carrot.sp_icon_del_data);
                 btn_del.set_icon_color(Color.white);
@@ -129,8 +135,17 @@ public class App : MonoBehaviour
                     this.list_data_cccd.RemoveAt(index_cccd);
                     this.Update_list_data();
                 });
+
+                item_m.set_act(()=>{
+                    this.Show_info_data(arr_data);
+                });
             }
         }
+    }
+
+    private void Show_info_data(string[] arr_data){
+        this.carrot.play_sound_click();
+        Carrot_Box box_info=this.carrot.Create_Box();
     }
 
     private Carrot_Box_Item Add_item_m(){
@@ -140,5 +155,11 @@ public class App : MonoBehaviour
         Carrot_Box_Item item_m=obj_m.GetComponent<Carrot_Box_Item>();
         item_m.set_type(Box_Item_Type.box_nomal);
         return item_m;
+    }
+
+    public void Btn_delete_all_data(){
+        this.carrot.play_sound_click();
+        this.list_data_cccd=new List<string>();
+        this.Update_list_data();
     }
 }

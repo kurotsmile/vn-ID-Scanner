@@ -72,13 +72,13 @@ public class App : MonoBehaviour
         s_data="số CCCD,Số CMND,tên,ngày sinh,giới tính,nơi cư trú,ngày cấp\n";
         for(int i=0;i<this.list_data_cccd.Count;i++){
             string[] arr_s=this.list_data_cccd[i].ToString().Split("|");
-            s_data += arr_s[0]+",";
-            s_data += arr_s[1]+",";
-            s_data += arr_s[2]+",";
-            s_data += arr_s[3]+",";
-            s_data += arr_s[4]+",";
-            s_data += arr_s[5]+",";
-            s_data += arr_s[6];
+            s_data +="\""+arr_s[0]+"\",";
+            s_data +="\""+arr_s[1]+"\",";
+            s_data +="\""+arr_s[2]+"\",";
+            s_data +="\""+arr_s[3]+"\",";
+            s_data +="\""+arr_s[4]+"\",";
+            s_data +="\""+arr_s[5]+"\",";
+            s_data +="\""+arr_s[6]+"\"";
             s_data+="\n";
         }
         FileBrowserHelpers.WriteTextToFile(path,s_data);
@@ -146,6 +146,57 @@ public class App : MonoBehaviour
     private void Show_info_data(string[] arr_data){
         this.carrot.play_sound_click();
         Carrot_Box box_info=this.carrot.Create_Box();
+        box_info.set_icon(this.carrot.user.icon_user_info);
+        box_info.set_title("Info");
+
+        if(arr_data[0]!=null){
+            Carrot_Box_Item m_item_cccd=box_info.create_item();
+            m_item_cccd.set_icon(this.carrot.icon_carrot_nomal);
+            m_item_cccd.set_title("CCCD No");
+            m_item_cccd.set_tip(arr_data[0]);
+        }
+
+        if(arr_data[1]!=null){
+            Carrot_Box_Item m_item_cccd=box_info.create_item();
+            m_item_cccd.set_icon(this.carrot.icon_carrot_nomal);
+            m_item_cccd.set_title("CMND No");
+            m_item_cccd.set_tip(arr_data[1]);
+        }
+
+        if(arr_data[2]!=null){
+            Carrot_Box_Item m_item_cccd=box_info.create_item();
+            m_item_cccd.set_icon(this.carrot.user.icon_user_login_true);
+            m_item_cccd.set_title("Full Name");
+            m_item_cccd.set_tip(arr_data[2]);
+        }
+
+        if(arr_data[3]!=null){
+            Carrot_Box_Item m_item_cccd=box_info.create_item();
+            m_item_cccd.set_icon(this.carrot.sp_icon_table_color);
+            m_item_cccd.set_title("Date of birth");
+            m_item_cccd.set_tip(arr_data[3]);
+        }
+
+        if(arr_data[4]!=null){
+            Carrot_Box_Item m_item_cccd=box_info.create_item();
+            m_item_cccd.set_icon(this.carrot.sp_icon_table_color);
+            m_item_cccd.set_title("Sex");
+            m_item_cccd.set_tip(arr_data[4]);
+        }
+
+         if(arr_data[5]!=null){
+            Carrot_Box_Item m_item_cccd=box_info.create_item();
+            m_item_cccd.set_icon(this.carrot.icon_carrot_location);
+            m_item_cccd.set_title("Address");
+            m_item_cccd.set_tip(arr_data[5]);
+        }
+
+         if(arr_data[6]!=null){
+            Carrot_Box_Item m_item_cccd=box_info.create_item();
+            m_item_cccd.set_icon(this.carrot.icon_carrot_all_category);
+            m_item_cccd.set_title("Date of issue");
+            m_item_cccd.set_tip(arr_data[6]);
+        }
     }
 
     private Carrot_Box_Item Add_item_m(){

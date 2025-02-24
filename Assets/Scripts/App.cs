@@ -1,21 +1,19 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Carrot;
-using SimpleFileBrowser;
+using MTAssets.NativeAndroidToolkit;
 using UnityEngine;
+using UnityEngine.Android;
 using UnityEngine.UI;
 
 public class App : MonoBehaviour
 {
     [Header("Main Obj")]
     public Carrot.Carrot carrot;
-    public CodeReader reader;
-    public Carrot_File file;
 
     [Header("App Obj")]
-    public GameObject panel_main;
-    public GameObject panel_scaner;
     public GameObject item_list_prefab;
     public Transform tr_arean_list_main;
 
@@ -26,48 +24,63 @@ public class App : MonoBehaviour
     
     void Start()
     {
+        if (NativeAndroidToolkit.isInitialized == false) NativeAndroidToolkit.Initialize();
+
+        if (!Permission.HasUserAuthorizedPermission(Permission.Camera)) {
+            Permission.RequestUserPermission(Permission.Camera);
+        }
+
         this.carrot.Load_Carrot();
-        this.panel_main.SetActive(true);
-        this.panel_scaner.SetActive(false);
         this.list_data_cccd=new List<string>();
-        CodeReader.OnCodeFinished += getDataFromReader;
         this.Update_list_data();
     }
 
     public void Btn_show_qr_scaner(){
         this.carrot.play_sound_click();
-        this.panel_main.SetActive(false);
-        this.panel_scaner.SetActive(true);
-        reader.StartWork();
-        this.carrot.delay_function(2f,()=>{
-            reader.StartWork();
-        });
+        //Check if the device can open the Camera
+        if (NAT.Camera.isCameraSupported() == true)
+        {
+            //First, register the callbacks...
+
+            //- onCameraReadCode(codeReaded)
+            NATEvents.onCameraReadCode += (string result) =>
+            {
+                getDataFromReader(result);
+                Debug.Log("The result of Scanned Code is " + result);
+            };
+            //- onCameraClose()
+            NATEvents.onCameraClose += () =>
+            {
+                Debug.Log("The Camera was closed before read a code.");
+            };
+
+            new NAT.Camera.CameraNative(NAT.Camera.CameraMode.CodeReader, ScreenOrientation.AutoRotation)
+                .setTitle("Code Reader")
+                .setCodeReaderMessage("Point to a Bar/QR Code and center it on the Screen")
+                .setEnableFlash(true)
+                .setEnableSwitch(true)
+                .setDefaultCamera(NAT.Camera.CameraType.BackCamera)
+                .OpenThisCamera();
+        }
+        if (NAT.Camera.isCameraSupported() == false)
+            Debug.LogError("Camera is not supported on this device!");
     }
 
-    public void Btn_close_qr_scanner(){
-        this.carrot.play_sound_click();
-        this.panel_scaner.SetActive(false);
-        this.panel_main.SetActive(true);
-        reader.StopWork();
-    }
 
     public void getDataFromReader(string dataStr)
 	{
+        Screen.orientation = ScreenOrientation.Portrait;
+        this.carrot.delay_function(2f,()=>{
+            Screen.orientation = ScreenOrientation.Portrait;
+        });
         this.Add_data(dataStr);
         this.carrot.play_sound_click();
-        this.panel_scaner.SetActive(false);
-        this.panel_main.SetActive(true);
-        reader.StopWork();
 	}
 
     public void Btn_export_exel(){
-        this.file.Set_filter(Carrot_File_Data.ExelData);
-        this.file.Save_file(Done_export_exel);
-    }
+        //this.file.Set_filter(Carrot_File_Data.ExelData);
+        //this.file.Save_file(Done_export_exel);
 
-    private void Done_export_exel(string[] s_paths)
-    {
-        string path = s_paths[0];
         string s_data="";
         s_data="số CCCD,Số CMND,tên,ngày sinh,giới tính,nơi cư trú,ngày cấp\n";
         for(int i=0;i<this.list_data_cccd.Count;i++){
@@ -81,8 +94,29 @@ public class App : MonoBehaviour
             s_data +="\""+arr_s[6]+"\"";
             s_data+="\n";
         }
-        FileBrowserHelpers.WriteTextToFile(path,s_data);
-        this.carrot.Show_msg("Data export", "Data export successful at path " + path + " !");
+
+        NATEvents.onFilesFilePickerOperationFinished += (NAT.Files.FilePickerOperationStatus status, NAT.Files.FilePickerOperationResponse response) =>
+        {
+            if (status == NAT.Files.FilePickerOperationStatus.Successfully)
+                if (response.operationType == NAT.Files.FilePickerAction.CreateFile)
+                {
+                    NAT.Files.WriteAllText(response.scopeOfOperation,Path.GetDirectoryName(response.pathFromOperationInScope), Path.GetFileName(response.pathFromOperationInScope), s_data);
+                    Debug.Log("The file \"" + Path.GetFileName(response.pathFromOperationInScope) + "\" was saved!");
+                    this.carrot.Show_msg("Data export", "Data export successful at path " + Path.GetFileName(response.pathFromOperationInScope) + " !");
+                }
+
+            if (status == NAT.Files.FilePickerOperationStatus.InvalidScope)
+                NAT.Dialogs.ShowSimpleAlertDialog("File Picker Operation Result", "Invalid scope! Please select another location!", false);
+            if (status == NAT.Files.FilePickerOperationStatus.Canceled)
+                NAT.Dialogs.ShowSimpleAlertDialog("File Picker Operation Result", "The File Picker operation has been canceled by the user!", false);
+            if (status == NAT.Files.FilePickerOperationStatus.Unknown)
+                NAT.Dialogs.ShowSimpleAlertDialog("File Picker Operation Result", "An internal error occurred in File Picker!", false);
+        };
+        
+        new NAT.Files.FilePickerOperation(NAT.Files.FilePickerInterfaceMode.PortraitFullscreen, "Select a Place To Create File")
+            .setCreateFileOperation(NAT.Files.FilePickerDefaultScope.Documents, "cccd.csv")
+            .setMimeType(NAT.Files.MimeType.CSV)
+            .OpenFilePicker();
     }
 
     [ContextMenu("Test Add Data")]
